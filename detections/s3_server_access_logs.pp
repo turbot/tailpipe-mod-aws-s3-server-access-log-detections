@@ -23,7 +23,7 @@ benchmark "s3_server_access_log_detections" {
 detection "s3_object_accessed_publicly" {
   title           = "S3 Object Accessed Publicly"
   description     = "Detect when an S3 object was accessed publicly, potentially exposing sensitive data to unauthorized users."
-  # documentation   = file("./detections/docs/s3_object_accessed_publicly.md")
+  documentation   = file("./detections/docs/s3_object_accessed_publicly.md")
   severity        = "high"
   display_columns = local.detection_display_columns
   query           = query.s3_object_accessed_publicly
@@ -51,7 +51,7 @@ query "s3_object_accessed_publicly" {
 detection "s3_bucket_policy_granted_public_access" {
   title           = "S3 Bucket Policy Granted Public Access"
   description     = "Detect when public access was granted to an S3 bucket by modifying its policy. Granting public access through a bucket policy can expose sensitive data to unauthorized users, increasing the risk of data breaches, data exfiltration, or malicious exploitation."
-  # documentation   = file("./detections/docs/s3_bucket_policy_granted_public_access.md")
+  documentation   = file("./detections/docs/s3_bucket_policy_granted_public_access.md")
   severity        = "high"
   display_columns = local.detection_display_columns
   query           = query.s3_bucket_policy_granted_public_access
@@ -82,7 +82,7 @@ query "s3_bucket_policy_granted_public_access" {
 detection "s3_bucket_acl_granted_public_access" {
   title           = "S3 Bucket ACL Granted Public Access"
   description     = "Detect when an S3 bucket ACL was modified to grant public access. Public ACLs can expose sensitive data to unauthorized users, increasing the risk of data breaches and data exfiltration."
-  # documentation   = file("./detections/docs/s3_bucket_acl_granted_public_access.md")
+  documentation   = file("./detections/docs/s3_bucket_acl_granted_public_access.md")
   severity        = "high"
   display_columns = local.detection_display_columns
   query           = query.s3_bucket_acl_granted_public_access
@@ -113,7 +113,7 @@ query "s3_bucket_acl_granted_public_access" {
 detection "s3_bucket_public_access_block_disabled" {
   title           = "S3 Bucket Public Access Block Disabled"
   description     = "Detect when the public access block settings for an S3 bucket were disabled. Disabling public access blocks can expose data to unauthorized users, increasing security risks."
-  # documentation   = file("./detections/docs/s3_bucket_public_access_block_disabled.md")
+  documentation   = file("./detections/docs/s3_bucket_public_access_block_disabled.md")
   severity        = "high"
   display_columns = local.detection_display_columns
   query           = query.s3_bucket_public_access_block_disabled
@@ -145,7 +145,7 @@ query "s3_bucket_public_access_block_disabled" {
 detection "s3_bucket_versioning_disabled" {
   title           = "S3 Bucket Versioning Disabled"
   description     = "Detect when versioning was disabled on an S3 bucket. Disabling versioning can lead to data loss by preventing object recovery from unintended deletions or modifications."
-  # documentation   = file("./detections/docs/s3_bucket_versioning_disabled.md")
+  documentation   = file("./detections/docs/s3_bucket_versioning_disabled.md")
   severity        = "medium"
   display_columns = local.detection_display_columns
   query           = query.s3_bucket_versioning_disabled
@@ -172,7 +172,7 @@ query "s3_bucket_versioning_disabled" {
 detection "s3_bucket_encryption_disabled" {
   title           = "S3 Bucket Encryption Disabled"
   description     = "Detect when encryption was disabled on an S3 bucket. Disabling encryption can expose sensitive data to unauthorized access and may violate security compliance policies."
-  # documentation   = file("./detections/docs/s3_bucket_encryption_disabled.md")
+  documentation   = file("./detections/docs/s3_bucket_encryption_disabled.md")
   severity        = "medium"
   display_columns = local.detection_display_columns
   query           = query.s3_bucket_encryption_disabled
@@ -199,7 +199,7 @@ query "s3_bucket_encryption_disabled" {
 detection "s3_bucket_replication_disabled" {
   title           = "S3 Bucket Replication Disabled"
   description     = "Detect when replication was disabled on an S3 bucket. Disabling replication can affect data redundancy and disaster recovery strategies."
-  # documentation   = file("./detections/docs/s3_bucket_replication_disabled.md")
+  documentation   = file("./detections/docs/s3_bucket_replication_disabled.md")
   severity        = "medium"
   display_columns = local.detection_display_columns
   query           = query.s3_bucket_replication_disabled
@@ -226,7 +226,7 @@ query "s3_bucket_replication_disabled" {
 detection "s3_bucket_logging_disabled" {
   title           = "S3 Bucket Logging Disabled"
   description     = "Detect when logging was disabled on an S3 bucket. Disabling logging can reduce visibility into bucket access and activity, impacting audit and security monitoring."
-  # documentation   = file("./detections/docs/s3_bucket_logging_disabled.md")
+  documentation   = file("./detections/docs/s3_bucket_logging_disabled.md")
   severity        = "high"
   display_columns = local.detection_display_columns
   query           = query.s3_bucket_logging_disabled
@@ -253,7 +253,7 @@ query "s3_bucket_logging_disabled" {
 detection "s3_object_uploaded_without_encryption" {
   title           = "S3 Object Uploaded Without Encryption"
   description     = "Detect when an S3 object was uploaded without server-side encryption. Uploading unencrypted objects can expose sensitive data to unauthorized access."
-  # documentation   = file("./detections/docs/s3_object_uploaded_without_encryption.md")
+  documentation   = file("./detections/docs/s3_object_uploaded_without_encryption.md")
   severity        = "medium"
   display_columns = local.detection_display_columns
   query           = query.s3_object_uploaded_without_encryption
