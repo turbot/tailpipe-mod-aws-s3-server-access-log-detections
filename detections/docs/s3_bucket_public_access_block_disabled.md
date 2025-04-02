@@ -4,5 +4,4 @@ Detect when public access block settings were disabled for an Amazon S3 bucket. 
 
 **References**:
 - [Using Amazon S3 Block Public Access](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html)
-- [Configuring Block Public Access Settings](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access-settings.html)
 - [AWS CLI Command: put-public-access-block](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/s3control/put-public-access-block.html)
