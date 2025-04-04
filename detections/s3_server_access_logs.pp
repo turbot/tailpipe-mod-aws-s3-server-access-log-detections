@@ -271,7 +271,10 @@ query "s3_object_uploaded_without_encryption" {
       aws_s3_server_access_log
     where
       operation = 'REST.PUT.OBJECT'
-      and json_contains(request_uri, '"x-amz-server-side-encryption": null')
+      and (
+        request_uri NOT LIKE '%x-amz-server-side-encryption=%'
+        and request_uri NOT LIKE '%X-Amz-Server-Side-Encryption=%'
+      )
     order by
       tp_timestamp desc;
   EOQ
