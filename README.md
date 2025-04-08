@@ -7,10 +7,10 @@
 The [AWS S3 Server Access Log Detections Mod](https://hub.powerpipe.io/mods/turbot/tailpipe-mod-aws-s3-server-access-log-detections) contains pre-built dashboards and detections, which can be used to monitor and analyze activity across your AWS accounts.
 
 Run detection benchmarks:
-![image](docs/images/aws_cloudtrail_log_mitre_dashboard.png)
+![image](docs/images/aws_s3_server_access_log_mitre_dashboard.png)
 
 View insights in dashboards:
-![image](docs/images/aws_cloudtrail_log_activity_dashboard.png)
+![image](docs/images/aws_s3_server_access_log_activity_dashboard.png)
 
 ## Documentation
 
