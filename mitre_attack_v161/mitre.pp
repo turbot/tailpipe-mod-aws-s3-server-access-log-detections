@@ -14,6 +14,7 @@ benchmark "mitre_attack_v161" {
     benchmark.mitre_attack_v161_ta0003,
     benchmark.mitre_attack_v161_ta0004,
     benchmark.mitre_attack_v161_ta0005,
+    benchmark.mitre_attack_v161_ta0009,
     benchmark.mitre_attack_v161_ta0010,
     benchmark.mitre_attack_v161_ta0040,
   ]

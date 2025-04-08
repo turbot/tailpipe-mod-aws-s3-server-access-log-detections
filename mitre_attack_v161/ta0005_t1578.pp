@@ -20,7 +20,7 @@ benchmark "mitre_attack_v161_ta0005_t1578_005" {
   type          = "detection"
   documentation = file("./mitre_attack_v161/docs/ta0005_t1578_001.md")
   children = [
-    detection.s3_bucket_encryption_disabled,
+    detection.s3_object_uploaded_without_encryption,
   ]
 
   tags = merge(local.mitre_attack_v161_ta0005_t1578_common_tags, {

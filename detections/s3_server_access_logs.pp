@@ -4,15 +4,14 @@ benchmark "s3_server_access_log_detections" {
   description = "This benchmark contains recommendations when scanning S3 server access logs."
   type        = "detection"
   children = [
-    detection.s3_bucket_acl_granted_public_access,
-    detection.s3_bucket_encryption_disabled,
-    detection.s3_bucket_logging_disabled,
-    detection.s3_bucket_policy_granted_public_access,
-    detection.s3_bucket_public_access_block_disabled,
-    detection.s3_bucket_replication_disabled,
-    detection.s3_bucket_versioning_disabled,
+    detection.s3_bucket_accessed_using_insecure_tls_version,
+    detection.s3_object_accessed_outside_business_hours,
     detection.s3_object_accessed_publicly,
-    detection.s3_object_uploaded_without_encryption
+    detection.s3_object_accessed_using_insecure_tls_version,
+    detection.s3_object_accessed_using_suspicious_user_agent,
+    detection.s3_object_accessed_with_large_request_size,
+    detection.s3_object_accessed_with_large_response_size,
+    detection.s3_object_uploaded_without_encryption,
   ]
 
   tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
@@ -29,7 +28,7 @@ detection "s3_object_accessed_publicly" {
   query           = query.s3_object_accessed_publicly
 
   tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "TA0001:T1537"
+    mitre_attack_ids = "T1078.004,T1546"
   })
 }
 
@@ -43,208 +42,6 @@ query "s3_object_accessed_publicly" {
       operation = 'REST.GET.OBJECT'
       and (requester IS NULL OR requester = '-')  -- Anonymous access
       and http_status = 200
-    order by
-      tp_timestamp desc;
-  EOQ
-}
-
-detection "s3_bucket_policy_granted_public_access" {
-  title           = "S3 Bucket Policy Granted Public Access"
-  description     = "Detect when public access was granted to an S3 bucket by modifying its policy. Granting public access through a bucket policy can expose sensitive data to unauthorized users, increasing the risk of data breaches, data exfiltration, or malicious exploitation."
-  documentation   = file("./detections/docs/s3_bucket_policy_granted_public_access.md")
-  severity        = "high"
-  display_columns = local.detection_display_columns
-  query           = query.s3_bucket_policy_granted_public_access
-
-  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "TA0005:T1070,TA0001:T1190"
-  })
-}
-
-query "s3_bucket_policy_granted_public_access" {
-  sql = <<-EOQ
-    select
-      ${local.detection_sql_columns}
-    from
-      aws_s3_server_access_log
-    where
-      operation = 'REST.PUT.BUCKETPOLICY'
-      and (
-        json_contains(request_uri, '"Principal": "*"')
-        or json_contains(request_uri, '"Principal": {"AWS": "*"}')
-      )
-      and json_contains(request_uri, '"Effect": "Allow"')
-    order by
-      tp_timestamp desc;
-  EOQ
-}
-
-detection "s3_bucket_acl_granted_public_access" {
-  title           = "S3 Bucket ACL Granted Public Access"
-  description     = "Detect when an S3 bucket ACL was modified to grant public access. Public ACLs can expose sensitive data to unauthorized users, increasing the risk of data breaches and data exfiltration."
-  documentation   = file("./detections/docs/s3_bucket_acl_granted_public_access.md")
-  severity        = "high"
-  display_columns = local.detection_display_columns
-  query           = query.s3_bucket_acl_granted_public_access
-
-  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "TA0005:T1070,TA0001:T1190"
-  })
-}
-
-query "s3_bucket_acl_granted_public_access" {
-  sql = <<-EOQ
-    select
-      ${local.detection_sql_columns}
-    from
-      aws_s3_server_access_log
-    where
-      operation = 'REST.PUT.ACL'
-      and (
-        json_contains(request_uri, '"Grantee": {"URI": "http://acs.amazonaws.com/groups/global/AllUsers"}')
-        or json_contains(request_uri, '"Grantee": {"URI": "http://acs.amazonaws.com/groups/global/AuthenticatedUsers"}')
-      )
-      and json_contains(request_uri, '"Permission": "FULL_CONTROL"')
-    order by
-      tp_timestamp desc;
-  EOQ
-}
-
-detection "s3_bucket_public_access_block_disabled" {
-  title           = "S3 Bucket Public Access Block Disabled"
-  description     = "Detect when the public access block settings for an S3 bucket were disabled. Disabling public access blocks can expose data to unauthorized users, increasing security risks."
-  documentation   = file("./detections/docs/s3_bucket_public_access_block_disabled.md")
-  severity        = "high"
-  display_columns = local.detection_display_columns
-  query           = query.s3_bucket_public_access_block_disabled
-
-  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "TA0005:T1070,TA0001:T1190"
-  })
-}
-
-query "s3_bucket_public_access_block_disabled" {
-  sql = <<-EOQ
-    select
-      ${local.detection_sql_columns}
-    from
-      aws_s3_server_access_log
-    where
-      operation = 'REST.PUT.PUBLICACCESSBLOCK'
-      and (
-        json_contains(request_uri, '"BlockPublicAcls": false')
-        or json_contains(request_uri, '"IgnorePublicAcls": false')
-        or json_contains(request_uri, '"BlockPublicPolicy": false')
-        or json_contains(request_uri, '"RestrictPublicBuckets": false')
-      )
-    order by
-      tp_timestamp desc;
-  EOQ
-}
-
-detection "s3_bucket_versioning_disabled" {
-  title           = "S3 Bucket Versioning Disabled"
-  description     = "Detect when versioning was disabled on an S3 bucket. Disabling versioning can lead to data loss by preventing object recovery from unintended deletions or modifications."
-  documentation   = file("./detections/docs/s3_bucket_versioning_disabled.md")
-  severity        = "medium"
-  display_columns = local.detection_display_columns
-  query           = query.s3_bucket_versioning_disabled
-
-  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "TA0040:T1485"
-  })
-}
-
-query "s3_bucket_versioning_disabled" {
-  sql = <<-EOQ
-    select
-      ${local.detection_sql_columns}
-    from
-      aws_s3_server_access_log
-    where
-      operation = 'REST.PUT.VERSIONING'
-      and json_contains(request_uri, '"Status": "Suspended"')
-    order by
-      tp_timestamp desc;
-  EOQ
-}
-
-detection "s3_bucket_encryption_disabled" {
-  title           = "S3 Bucket Encryption Disabled"
-  description     = "Detect when encryption was disabled on an S3 bucket. Disabling encryption can expose sensitive data to unauthorized access and may violate security compliance policies."
-  documentation   = file("./detections/docs/s3_bucket_encryption_disabled.md")
-  severity        = "medium"
-  display_columns = local.detection_display_columns
-  query           = query.s3_bucket_encryption_disabled
-
-  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "TA0040:T1485"
-  })
-}
-
-query "s3_bucket_encryption_disabled" {
-  sql = <<-EOQ
-    select
-      ${local.detection_sql_columns}
-    from
-      aws_s3_server_access_log
-    where
-      operation = 'REST.PUT.ENCRYPTION'
-      and json_contains(request_uri, '"SSEAlgorithm": null')
-    order by
-      tp_timestamp desc;
-  EOQ
-}
-
-detection "s3_bucket_replication_disabled" {
-  title           = "S3 Bucket Replication Disabled"
-  description     = "Detect when replication was disabled on an S3 bucket. Disabling replication can affect data redundancy and disaster recovery strategies."
-  documentation   = file("./detections/docs/s3_bucket_replication_disabled.md")
-  severity        = "medium"
-  display_columns = local.detection_display_columns
-  query           = query.s3_bucket_replication_disabled
-
-  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "TA0040:T1485"
-  })
-}
-
-query "s3_bucket_replication_disabled" {
-  sql = <<-EOQ
-    select
-      ${local.detection_sql_columns}
-    from
-      aws_s3_server_access_log
-    where
-      operation = 'REST.PUT.REPLICATION'
-      and json_contains(request_uri, '"Status": "Disabled"')
-    order by
-      tp_timestamp desc;
-  EOQ
-}
-
-detection "s3_bucket_logging_disabled" {
-  title           = "S3 Bucket Logging Disabled"
-  description     = "Detect when logging was disabled on an S3 bucket. Disabling logging can reduce visibility into bucket access and activity, impacting audit and security monitoring."
-  documentation   = file("./detections/docs/s3_bucket_logging_disabled.md")
-  severity        = "high"
-  display_columns = local.detection_display_columns
-  query           = query.s3_bucket_logging_disabled
-
-  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "TA0005:T1070,TA0001:T1190"
-  })
-}
-
-query "s3_bucket_logging_disabled" {
-  sql = <<-EOQ
-    select
-      ${local.detection_sql_columns}
-    from
-      aws_s3_server_access_log
-    where
-      operation = 'REST.PUT.LOGGING'
-      and json_contains(request_uri, '"LoggingEnabled": null')
     order by
       tp_timestamp desc;
   EOQ
@@ -271,10 +68,171 @@ query "s3_object_uploaded_without_encryption" {
       aws_s3_server_access_log
     where
       operation = 'REST.PUT.OBJECT'
+      and request_uri not ilike '%x-amz-server-side-encryption=%'
+    order by
+      tp_timestamp desc;
+  EOQ
+}
+
+detection "s3_object_accessed_using_insecure_tls_version" {
+  title       = "S3 Object Accessed Using Insecure TLS Version"
+  description = "Detect when an S3 object was accessed over a deprecated or insecure TLS version, potentially exposing data in transit to interception or downgrade attacks."
+  documentation = file("./detections/docs/s3_object_accessed_using_insecure_tls_version.md")
+  severity    = "medium"
+  display_columns = local.detection_display_columns
+  query       = query.s3_object_accessed_using_insecure_tls_version
+
+  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
+    mitre_attack_ids = "TA0001:T1078"
+  })
+}
+
+query "s3_object_accessed_using_insecure_tls_version" {
+  sql = <<-EOQ
+    select
+      ${local.detection_sql_columns}
+    from
+      aws_s3_server_access_log
+    where
+      operation in ('REST.GET.OBJECT', 'REST.PUT.OBJECT', 'REST.DELETE.OBJECT')
+      and tls_version in ('TLSv1.0', 'TLSv1.1')
+    order by
+      tp_timestamp desc;
+  EOQ
+}
+
+detection "s3_bucket_accessed_using_insecure_tls_version" {
+  title       = "S3 Bucket Accessed Using Insecure TLS Version"
+  description = "Detect when an S3 bucket was accessed over a deprecated or insecure TLS version, potentially exposing data in transit to interception or downgrade attacks."
+  documentation = file("./detections/docs/s3_bucket_accessed_using_insecure_tls_version.md")
+  severity    = "medium"
+  display_columns = local.detection_display_columns
+  query       = query.s3_bucket_accessed_using_insecure_tls_version
+
+  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
+    mitre_attack_ids = "TA0001:T1078"
+  })
+}
+
+query "s3_bucket_accessed_using_insecure_tls_version" {
+  sql = <<-EOQ
+    select
+      ${local.detection_sql_columns}
+    from
+      aws_s3_server_access_log
+    where
+      operation not in ('REST.GET.OBJECT', 'REST.PUT.OBJECT', 'REST.DELETE.OBJECT')
+      and tls_version in ('TLSv1.0', 'TLSv1.1')
+    order by
+      tp_timestamp desc;
+  EOQ
+}
+
+detection "s3_object_accessed_using_suspicious_user_agent" {
+  title       = "S3 Object Accessed Using Suspicious User-Agent"
+  description = "Detect when an S3 object was accessed using a suspicious user-agent, such as command-line tools or bots, which are commonly used in scraping or automated abuse."
+  documentation = file("./detections/docs/s3_object_accessed_using_suspicious_user_agent.md")
+  severity    = "medium"
+  display_columns = local.detection_display_columns
+  query       = query.s3_object_accessed_using_suspicious_user_agent
+
+  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
+    mitre_attack_ids = "TA0011:T1071.001,TA0009:T1119"
+  })
+}
+
+query "s3_object_accessed_using_suspicious_user_agent" {
+  sql = <<-EOQ
+    select
+      ${local.detection_sql_columns}
+    from
+      aws_s3_server_access_log
+    where
+      operation in ('REST.GET.OBJECT', 'REST.PUT.OBJECT', 'REST.DELETE.OBJECT')
       and (
-        request_uri NOT LIKE '%x-amz-server-side-encryption=%'
-        and request_uri NOT LIKE '%X-Amz-Server-Side-Encryption=%'
+        user_agent ilike '%curl%' or
+        user_agent ilike '%python%' or
+        user_agent ilike '%bot%'
       )
+    order by
+      tp_timestamp desc;
+  EOQ
+}
+
+detection "s3_object_accessed_outside_business_hours" {
+  title       = "S3 Object Accessed Outside Business Hours"
+  description = "Detect when an S3 object was accessed outside of typical business hours, which may indicate unauthorized activity or credential misuse."
+  documentation = file("./detections/docs/s3_object_accessed_outside_business_hours.md")
+  severity    = "medium"
+  display_columns = local.detection_display_columns
+  query       = query.s3_object_accessed_outside_business_hours
+
+  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
+    mitre_attack_ids = "TA0006:T1078"
+  })
+}
+
+query "s3_object_accessed_outside_business_hours" {
+  sql = <<-EOQ
+    select
+      ${local.detection_sql_columns}
+    from
+      aws_s3_server_access_log
+    where
+      extract(hour from timestamp) not between 8 and 18
+      and operation = 'REST.GET.OBJECT'
+    order by
+      tp_timestamp desc;
+  EOQ
+}
+
+detection "s3_object_accessed_with_large_response_size" {
+  title       = "S3 Object Accessed with Large Response Size"
+  description = "Detect when an S3 object was accessed and the response size exceeded 100MB, which may indicate bulk data exfiltration."
+  documentation = file("./detections/docs/s3_object_accessed_with_large_response_size.md")
+  severity    = "medium"
+  display_columns = local.detection_display_columns
+  query       = query.s3_object_accessed_with_large_response_size
+
+  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
+    mitre_attack_ids = "TA0010:T1030"
+  })
+}
+
+query "s3_object_accessed_with_large_response_size" {
+  sql = <<-EOQ
+    select
+      ${local.detection_sql_columns}
+    from
+      aws_s3_server_access_log
+    where operation = 'REST.GET.OBJECT'
+      and bytes_sent > 100000000
+    order by
+      tp_timestamp desc;
+  EOQ
+}
+
+detection "s3_object_accessed_with_large_request_size" {
+  title       = "S3 Object Accessed with Large Request Size"
+  description = "Detect when an S3 object was accessed and the request size exceeded 10MB, which may indicate bulk data exfiltration."
+  documentation = file("./detections/docs/s3_object_accessed_with_large_request_size.md")
+  severity    = "medium"
+  display_columns = local.detection_display_columns
+  query       = query.s3_object_accessed_with_large_request_size
+
+  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
+    mitre_attack_ids = "TA0010:T1030"
+  })
+}
+
+query "s3_object_accessed_with_large_request_size" {
+  sql = <<-EOQ
+    select
+      ${local.detection_sql_columns}
+    from
+      aws_s3_server_access_log
+    where operation = 'REST.GET.OBJECT'
+      and object_size > 10000000
     order by
       tp_timestamp desc;
   EOQ

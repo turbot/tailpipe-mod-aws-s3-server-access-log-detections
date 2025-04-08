@@ -9,9 +9,6 @@ benchmark "mitre_attack_v161_ta0040_t1485" {
   type          = "detection"
   documentation = file("./mitre_attack_v161/docs/ta0040_t1485.md")
   children = [
-    detection.s3_bucket_encryption_disabled,
-    detection.s3_bucket_replication_disabled,
-    detection.s3_bucket_versioning_disabled,
     detection.s3_object_uploaded_without_encryption,
   ]
 
