@@ -75,12 +75,12 @@ query "s3_object_uploaded_without_encryption" {
 }
 
 detection "s3_object_accessed_using_insecure_tls_version" {
-  title       = "S3 Object Accessed Using Insecure TLS Version"
-  description = "Detect when an S3 object was accessed over a deprecated or insecure TLS version, potentially exposing data in transit to interception or downgrade attacks."
-  documentation = file("./detections/docs/s3_object_accessed_using_insecure_tls_version.md")
-  severity    = "medium"
+  title           = "S3 Object Accessed Using Insecure TLS Version"
+  description     = "Detect when an S3 object was accessed over a deprecated or insecure TLS version, potentially exposing data in transit to interception or downgrade attacks."
+  documentation   = file("./detections/docs/s3_object_accessed_using_insecure_tls_version.md")
+  severity        = "medium"
   display_columns = local.detection_display_columns
-  query       = query.s3_object_accessed_using_insecure_tls_version
+  query           = query.s3_object_accessed_using_insecure_tls_version
 
   tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
     mitre_attack_ids = "TA0001:T1078"
@@ -102,12 +102,12 @@ query "s3_object_accessed_using_insecure_tls_version" {
 }
 
 detection "s3_bucket_accessed_using_insecure_tls_version" {
-  title       = "S3 Bucket Accessed Using Insecure TLS Version"
-  description = "Detect when an S3 bucket was accessed over a deprecated or insecure TLS version, potentially exposing data in transit to interception or downgrade attacks."
-  documentation = file("./detections/docs/s3_bucket_accessed_using_insecure_tls_version.md")
-  severity    = "medium"
+  title           = "S3 Bucket Accessed Using Insecure TLS Version"
+  description     = "Detect when an S3 bucket was accessed over a deprecated or insecure TLS version, potentially exposing data in transit to interception or downgrade attacks."
+  documentation   = file("./detections/docs/s3_bucket_accessed_using_insecure_tls_version.md")
+  severity        = "medium"
   display_columns = local.detection_display_columns
-  query       = query.s3_bucket_accessed_using_insecure_tls_version
+  query           = query.s3_bucket_accessed_using_insecure_tls_version
 
   tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
     mitre_attack_ids = "TA0001:T1078"
@@ -129,12 +129,12 @@ query "s3_bucket_accessed_using_insecure_tls_version" {
 }
 
 detection "s3_object_accessed_using_suspicious_user_agent" {
-  title       = "S3 Object Accessed Using Suspicious User-Agent"
-  description = "Detect when an S3 object was accessed using a suspicious user-agent, such as command-line tools or bots, which are commonly used in scraping or automated abuse."
-  documentation = file("./detections/docs/s3_object_accessed_using_suspicious_user_agent.md")
-  severity    = "medium"
+  title           = "S3 Object Accessed Using Suspicious User-Agent"
+  description     = "Detect when an S3 object was accessed using a suspicious user-agent, such as command-line tools or bots, which are commonly used in scraping or automated abuse."
+  documentation   = file("./detections/docs/s3_object_accessed_using_suspicious_user_agent.md")
+  severity        = "medium"
   display_columns = local.detection_display_columns
-  query       = query.s3_object_accessed_using_suspicious_user_agent
+  query           = query.s3_object_accessed_using_suspicious_user_agent
 
   tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
     mitre_attack_ids = "TA0011:T1071.001,TA0009:T1119"
@@ -160,12 +160,12 @@ query "s3_object_accessed_using_suspicious_user_agent" {
 }
 
 detection "s3_object_accessed_outside_business_hours" {
-  title       = "S3 Object Accessed Outside Business Hours"
-  description = "Detect when an S3 object was accessed outside of typical business hours, which may indicate unauthorized activity or credential misuse."
-  documentation = file("./detections/docs/s3_object_accessed_outside_business_hours.md")
-  severity    = "medium"
+  title           = "S3 Object Accessed Outside Business Hours"
+  description     = "Detect when an S3 object was accessed outside of typical business hours, which may indicate unauthorized activity or credential misuse."
+  documentation   = file("./detections/docs/s3_object_accessed_outside_business_hours.md")
+  severity        = "medium"
   display_columns = local.detection_display_columns
-  query       = query.s3_object_accessed_outside_business_hours
+  query           = query.s3_object_accessed_outside_business_hours
 
   tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
     mitre_attack_ids = "TA0006:T1078"
@@ -187,12 +187,12 @@ query "s3_object_accessed_outside_business_hours" {
 }
 
 detection "s3_object_accessed_with_large_response_size" {
-  title       = "S3 Object Accessed with Large Response Size"
-  description = "Detect when an S3 object was accessed and the response size exceeded 100MB, which may indicate bulk data exfiltration."
-  documentation = file("./detections/docs/s3_object_accessed_with_large_response_size.md")
-  severity    = "medium"
+  title           = "S3 Object Accessed with Large Response Size"
+  description     = "Detect when an S3 object was accessed and the response size exceeded 100MB, which may indicate bulk data exfiltration."
+  documentation   = file("./detections/docs/s3_object_accessed_with_large_response_size.md")
+  severity        = "medium"
   display_columns = local.detection_display_columns
-  query       = query.s3_object_accessed_with_large_response_size
+  query           = query.s3_object_accessed_with_large_response_size
 
   tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
     mitre_attack_ids = "TA0010:T1030"
@@ -213,12 +213,12 @@ query "s3_object_accessed_with_large_response_size" {
 }
 
 detection "s3_object_accessed_with_large_request_size" {
-  title       = "S3 Object Accessed with Large Request Size"
-  description = "Detect when an S3 object was accessed and the request size exceeded 10MB, which may indicate bulk data exfiltration."
-  documentation = file("./detections/docs/s3_object_accessed_with_large_request_size.md")
-  severity    = "medium"
+  title           = "S3 Object Accessed with Large Request Size"
+  description     = "Detect when an S3 object was accessed and the request size exceeded 10MB, which may indicate bulk data exfiltration."
+  documentation   = file("./detections/docs/s3_object_accessed_with_large_request_size.md")
+  severity        = "medium"
   display_columns = local.detection_display_columns
-  query       = query.s3_object_accessed_with_large_request_size
+  query           = query.s3_object_accessed_with_large_request_size
 
   tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
     mitre_attack_ids = "TA0010:T1030"

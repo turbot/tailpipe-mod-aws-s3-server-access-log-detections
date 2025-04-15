@@ -251,12 +251,12 @@ query "activity_dashboard_logs_by_status" {
 
   sql = <<-EOQ
     select
-      http_status as "Status Code",
+      http_status::VARCHAR as "Status Code",
       count(*) as "Logs"
     from
       aws_s3_server_access_log
     group by
-      http_status
+      http_status::VARCHAR
     order by
       count(*) desc
     limit 10;

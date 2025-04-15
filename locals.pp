@@ -37,8 +37,4 @@ locals {
     "http_status",
     "error_code"
   ]
-
-  detection_sql_where_conditions = <<-EOQ
-  and error_code is null
-  EOQ
 }
