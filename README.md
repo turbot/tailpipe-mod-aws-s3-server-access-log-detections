@@ -4,7 +4,7 @@
 
 [AWS](https://aws.amazon.com/) provides on-demand cloud computing platforms and APIs to authenticated customers on a metered pay-as-you-go basis.
 
-The [AWS S3 Server Access Log Detections Mod](https://hub.powerpipe.io/mods/turbot/tailpipe-mod-aws-s3-server-access-log-detections) contains pre-built dashboards and detections, which can be used to monitor and analyze activity across your AWS accounts.
+The [AWS S3 Server Access Log Detections Mod](https://hub.powerpipe.io/mods/turbot/tailpipe-mod-aws-s3-server-access-log-detections) contains pre-built dashboards and detections, to monitor and analyze access patterns, security risks, and data activity across your S3 buckets.
 
 Run detection benchmarks:
 ![image](docs/images/aws_s3_server_access_log_mitre_dashboard.png)
