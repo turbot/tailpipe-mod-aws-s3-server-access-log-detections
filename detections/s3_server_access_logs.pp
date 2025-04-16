@@ -1,4 +1,3 @@
-
 benchmark "s3_server_access_log_detections" {
   title       = "S3 Server Access Log Detections"
   description = "This benchmark contains recommendations when scanning S3 server access logs."
@@ -6,72 +5,15 @@ benchmark "s3_server_access_log_detections" {
   children = [
     detection.s3_bucket_accessed_using_insecure_tls_version,
     detection.s3_object_accessed_outside_business_hours,
-    detection.s3_object_accessed_publicly,
     detection.s3_object_accessed_using_insecure_tls_version,
     detection.s3_object_accessed_using_suspicious_user_agent,
     detection.s3_object_accessed_with_large_request_size,
     detection.s3_object_accessed_with_large_response_size,
-    detection.s3_object_uploaded_without_encryption,
   ]
 
   tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
     type = "Benchmark"
   })
-}
-
-detection "s3_object_accessed_publicly" {
-  title           = "S3 Object Accessed Publicly"
-  description     = "Detect when an S3 object was accessed publicly, potentially exposing sensitive data to unauthorized users."
-  documentation   = file("./detections/docs/s3_object_accessed_publicly.md")
-  severity        = "high"
-  display_columns = local.detection_display_columns
-  query           = query.s3_object_accessed_publicly
-
-  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "T1078.004,T1546"
-  })
-}
-
-query "s3_object_accessed_publicly" {
-  sql = <<-EOQ
-    select
-      ${local.detection_sql_columns}
-    from
-      aws_s3_server_access_log
-    where
-      operation = 'REST.GET.OBJECT'
-      and (requester IS NULL OR requester = '-')  -- Anonymous access
-      and http_status = 200
-    order by
-      tp_timestamp desc;
-  EOQ
-}
-
-detection "s3_object_uploaded_without_encryption" {
-  title           = "S3 Object Uploaded Without Encryption"
-  description     = "Detect when an S3 object was uploaded without server-side encryption. Uploading unencrypted objects can expose sensitive data to unauthorized access."
-  documentation   = file("./detections/docs/s3_object_uploaded_without_encryption.md")
-  severity        = "medium"
-  display_columns = local.detection_display_columns
-  query           = query.s3_object_uploaded_without_encryption
-
-  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
-    mitre_attack_ids = "TA0040:T1485"
-  })
-}
-
-query "s3_object_uploaded_without_encryption" {
-  sql = <<-EOQ
-    select
-      ${local.detection_sql_columns}
-    from
-      aws_s3_server_access_log
-    where
-      operation = 'REST.PUT.OBJECT'
-      and request_uri not ilike '%x-amz-server-side-encryption=%'
-    order by
-      tp_timestamp desc;
-  EOQ
 }
 
 detection "s3_object_accessed_using_insecure_tls_version" {
@@ -130,7 +72,7 @@ query "s3_bucket_accessed_using_insecure_tls_version" {
 
 detection "s3_object_accessed_using_suspicious_user_agent" {
   title           = "S3 Object Accessed Using Suspicious User-Agent"
-  description     = "Detect when an S3 object was accessed using a suspicious user-agent, such as command-line tools or bots, which are commonly used in scraping or automated abuse."
+  description     = "Detect when an S3 object was accessed using a suspicious user-agent, such as penetration testing tools, command-line tools, or known malicious agents, which are commonly used in automated attacks."
   documentation   = file("./detections/docs/s3_object_accessed_using_suspicious_user_agent.md")
   severity        = "medium"
   display_columns = local.detection_display_columns
@@ -150,9 +92,37 @@ query "s3_object_accessed_using_suspicious_user_agent" {
     where
       operation in ('REST.GET.OBJECT', 'REST.PUT.OBJECT', 'REST.DELETE.OBJECT')
       and (
+        -- Command-line tools
         user_agent ilike '%curl%' or
+        user_agent ilike '%wget%' or
         user_agent ilike '%python%' or
-        user_agent ilike '%bot%'
+        user_agent ilike '%go-http%' or
+        user_agent ilike '%ruby%' or
+        user_agent ilike '%powershell%' or
+        
+        -- Known scanners and penetration testing tools
+        user_agent ilike '%nuclei%' or
+        user_agent ilike '%nmap%' or
+        user_agent ilike '%burpsuite%' or
+        user_agent ilike '%sqlmap%' or
+        user_agent ilike '%nikto%' or
+        user_agent ilike '%hydra%' or
+        user_agent ilike '%metasploit%' or
+        user_agent ilike '%gobuster%' or
+        user_agent ilike '%dirbuster%' or
+        
+        -- Suspicious bots and crawlers
+        user_agent ilike '%zgrab%' or
+        user_agent ilike '%masscan%' or
+        user_agent ilike '%googlebot%' or
+        user_agent ilike '%baiduspider%' or
+        
+        -- Generic indicators
+        user_agent ilike '%scanner%' or
+        user_agent ilike '%exploit%' or
+        user_agent ilike '%attack%' or
+        user_agent = '-' or
+        user_agent is null
       )
     order by
       tp_timestamp desc;
@@ -161,9 +131,9 @@ query "s3_object_accessed_using_suspicious_user_agent" {
 
 detection "s3_object_accessed_outside_business_hours" {
   title           = "S3 Object Accessed Outside Business Hours"
-  description     = "Detect when an S3 object was accessed outside of typical business hours, which may indicate unauthorized activity or credential misuse."
+  description     = "Detect when an S3 object was accessed outside of typical business hours, which may indicate unusual activity patterns worth investigating."
   documentation   = file("./detections/docs/s3_object_accessed_outside_business_hours.md")
-  severity        = "medium"
+  severity        = "low"
   display_columns = local.detection_display_columns
   query           = query.s3_object_accessed_outside_business_hours
 
@@ -179,7 +149,7 @@ query "s3_object_accessed_outside_business_hours" {
     from
       aws_s3_server_access_log
     where
-      extract(hour from timestamp) not between 8 and 18
+      extract(hour from tp_timestamp) not between 8 and 18
       and operation = 'REST.GET.OBJECT'
     order by
       tp_timestamp desc;
@@ -188,9 +158,9 @@ query "s3_object_accessed_outside_business_hours" {
 
 detection "s3_object_accessed_with_large_response_size" {
   title           = "S3 Object Accessed with Large Response Size"
-  description     = "Detect when an S3 object was accessed and the response size exceeded 100MB, which may indicate bulk data exfiltration."
+  description     = "Detect when an S3 object was accessed and the response size exceeded 100MB, which may indicate potential data exfiltration or unusual access patterns."
   documentation   = file("./detections/docs/s3_object_accessed_with_large_response_size.md")
-  severity        = "medium"
+  severity        = "low"
   display_columns = local.detection_display_columns
   query           = query.s3_object_accessed_with_large_response_size
 
@@ -214,9 +184,9 @@ query "s3_object_accessed_with_large_response_size" {
 
 detection "s3_object_accessed_with_large_request_size" {
   title           = "S3 Object Accessed with Large Request Size"
-  description     = "Detect when an S3 object was accessed and the request size exceeded 10MB, which may indicate bulk data exfiltration."
+  description     = "Detect when an S3 object was accessed and the request size exceeded 10MB, which may indicate unusual upload patterns."
   documentation   = file("./detections/docs/s3_object_accessed_with_large_request_size.md")
-  severity        = "medium"
+  severity        = "low"
   display_columns = local.detection_display_columns
   query           = query.s3_object_accessed_with_large_request_size
 

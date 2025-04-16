@@ -9,83 +9,105 @@ dashboard "activity_dashboard" {
   }
 
   container {
-
     # Analysis
     card {
-      query = query.activity_dashboard_total_logs
+      query = query.activity_dashboard_total_requests
       width = 2
     }
 
     card {
-      query = query.activity_dashboard_error_rate
+      query = query.activity_dashboard_success_count
       width = 2
+      type  = "ok"
     }
 
     card {
-      query = query.activity_dashboard_total_data_transferred
+      query = query.activity_dashboard_redirect_count
       width = 2
+      type  = "info"
     }
 
+    card {
+      query = query.activity_dashboard_client_error_count
+      width = 2
+      type  = "alert"
+    }
+
+    card {
+      query = query.activity_dashboard_server_error_count
+      width = 2
+      type  = "alert"
+    }
   }
 
   container {
 
     chart {
-      title = "Logs by Bucket"
-      query = query.activity_dashboard_logs_by_bucket
-      type  = "column"
-      width = 6
-    }
-
-    chart {
-      title = "Activity Over Time (Last 30 Days)"
-      query = query.activity_dashboard_logs_over_time
+      title = "Requests by Day"
+      query = query.activity_dashboard_requests_by_day
       type  = "line"
       width = 6
     }
 
     chart {
-      title = "Top 10 Requesters"
-      query = query.activity_dashboard_logs_by_requester
-      type  = "table"
+      title = "Requests by Bucket"
+      query = query.activity_dashboard_requests_by_bucket
+      type  = "column"
       width = 6
     }
 
     chart {
-      title = "Top 10 Source IPs (Excluding AWS Services and Internal)"
-      query = query.activity_dashboard_logs_by_source_ip
+      title = "Requests by Status Code"
+      query = query.activity_dashboard_requests_by_status_category
+      type  = "pie"
+      width = 6
+    }
+
+    chart {
+      title = "Top 10 URLs"
+      query = query.activity_dashboard_top_10_urls
       type  = "table"
       width = 6
     }
 
     chart {
       title = "Top 10 Operations"
-      query = query.activity_dashboard_logs_by_operation
+      query = query.activity_dashboard_requests_by_operation
       type  = "table"
       width = 6
     }
 
     chart {
       title = "Top 10 Error Codes"
-      query = query.activity_dashboard_logs_by_error
-      type  = "table"
-      width = 6
-    }
-
-  }
-
-  container {
-    
-    chart {
-      title = "Top 10 HTTP Status Codes"
-      query = query.activity_dashboard_logs_by_status
+      query = query.activity_dashboard_requests_by_error
       type  = "table"
       width = 6
     }
 
     chart {
-      title = "Top 10 User Agents"
-      query = query.activity_dashboard_logs_by_user_agent
+      title = "Top 10 Requesters"
+      query = query.activity_dashboard_requests_by_requester
+      type  = "table"
+      width = 6
+    }
+
+    chart {
+      title = "Top 10 Source IPs"
+      query = query.activity_dashboard_requests_by_source_ip
+      type  = "table"
+      width = 6
+    }
+
+    chart {
+      title = "Top 10 URLs (Successful Requests)"
+      query = query.activity_dashboard_top_10_successful_urls
+      type  = "table"
+      width = 6
+    }
+
+    chart {
+      title = "Top 10 URLs (Errors)"
+      query = query.activity_dashboard_top_10_error_urls
       type  = "table"
       width = 6
     }
@@ -95,13 +117,13 @@ dashboard "activity_dashboard" {
 
 # Query definitions
 
-query "activity_dashboard_total_logs" {
-  title       = "Log Count"
-  description = "Count the total S3 server access log entries."
+query "activity_dashboard_total_requests" {
+  title       = "Request Count"
+  description = "Count the total S3 server access requests."
 
   sql = <<-EOQ
     select
-      count(*) as "Total Logs"
+      count(*) as "Total Requests"
     from
       aws_s3_server_access_log;
   EOQ
@@ -111,19 +133,17 @@ query "activity_dashboard_total_logs" {
   }
 }
 
-query "activity_dashboard_error_rate" {
-  title       = "Error Rate"
-  description = "Percentage of requests resulting in an error (non-2xx status)."
+query "activity_dashboard_success_count" {
+  title       = "Successful Request Count"
+  description = "Count of successful HTTP requests (status 2xx)."
 
   sql = <<-EOQ
     select
-      round(
-        (count(*) filter (where http_status >= 400)::numeric / 
-        nullif(count(*)::numeric, 0)) * 100,
-        2
-      ) as "Error Rate %"
+      count(*) as "Successful (2xx)"
     from
-      aws_s3_server_access_log;
+      aws_s3_server_access_log
+    where
+      http_status between 200 and 299;
   EOQ
 
   tags = {
@@ -131,15 +151,17 @@ query "activity_dashboard_error_rate" {
   }
 }
 
-query "activity_dashboard_total_data_transferred" {
-  title       = "Data Transferred"
-  description = "Total bytes sent from S3."
+query "activity_dashboard_redirect_count" {
+  title       = "Redirect Request Count"
+  description = "Count of redirect HTTP requests (status 3xx)."
 
   sql = <<-EOQ
     select
-      sum(cast(bytes_sent as BIGINT)) as "Data Transferred"
+      count(*) as "Redirections (3xx)"
     from
-      aws_s3_server_access_log;
+      aws_s3_server_access_log
+    where
+      http_status between 300 and 399;
   EOQ
 
   tags = {
@@ -147,24 +169,59 @@ query "activity_dashboard_total_data_transferred" {
   }
 }
 
-query "activity_dashboard_logs_by_source_ip" {
-  title       = "Top 10 Source IPs (Excluding AWS Services and Internal)"
-  description = "List the top 10 source IPs by frequency, excluding events from AWS services and internal."
+query "activity_dashboard_client_error_count" {
+  title       = "Client Error Count"
+  description = "Count of client error HTTP requests (status 4xx)."
 
   sql = <<-EOQ
     select
-      tp_source_ip as "Source IP",
-      count(*) as "Logs"
+      count(*) as "Client Errors (4xx)"
+    from
+      aws_s3_server_access_log
+    where
+      http_status between 400 and 499;
+  EOQ
+
+  tags = {
+    folder = "S3"
+  }
+}
+
+query "activity_dashboard_server_error_count" {
+  title       = "Server Error Count"
+  description = "Count of server error HTTP requests (status 5xx)."
+
+  sql = <<-EOQ
+    select
+      count(*) as "Server Errors (5xx)"
+    from
+      aws_s3_server_access_log
+    where
+      http_status between 500 and 599;
+  EOQ
+
+  tags = {
+    folder = "S3"
+  }
+}
+
+query "activity_dashboard_requests_by_source_ip" {
+  title       = "Top 10 Source IPs"
+  description = "List the top 10 source IPs by request count."
+
+  sql = <<-EOQ
+    select
+      tp_source_ip as "Client IP",
+      count(*) as "Request Count"
     from
       aws_s3_server_access_log
     where
       tp_source_ip != ''
-      and requester not like 'svc:%'
-      and requester not like '%AWSServiceRole%'
     group by
       tp_source_ip
     order by
-      count(*) desc
+      count(*) desc,
+      tp_source_ip
     limit 10;
   EOQ
 
@@ -173,14 +230,14 @@ query "activity_dashboard_logs_by_source_ip" {
   }
 }
 
-query "activity_dashboard_logs_by_requester" {
+query "activity_dashboard_requests_by_requester" {
   title       = "Top 10 Requesters"
   description = "List the top 10 requesters by frequency."
 
   sql = <<-EOQ
     select
       requester as "Requester",
-      count(*) as "Logs"
+      count(*) as "Request Count"
     from
       aws_s3_server_access_log
     where
@@ -188,7 +245,8 @@ query "activity_dashboard_logs_by_requester" {
     group by
       requester
     order by
-      count(*) desc
+      count(*) desc,
+      requester
     limit 10;
   EOQ
 
@@ -197,20 +255,21 @@ query "activity_dashboard_logs_by_requester" {
   }
 }
 
-query "activity_dashboard_logs_by_operation" {
+query "activity_dashboard_requests_by_operation" {
   title       = "Top 10 Operations"
   description = "List the top 10 S3 operations by frequency."
 
   sql = <<-EOQ
     select
       operation as "Operation",
-      count(*) as "Logs"
+      count(*) as "Request Count"
     from
       aws_s3_server_access_log
     group by
       operation
     order by
-      count(*) desc
+      count(*) desc,
+      operation
     limit 10;
   EOQ
 
@@ -219,14 +278,14 @@ query "activity_dashboard_logs_by_operation" {
   }
 }
 
-query "activity_dashboard_logs_by_error" {
+query "activity_dashboard_requests_by_error" {
   title       = "Top 10 Error Codes"
   description = "List the 10 most frequent error codes."
 
   sql = <<-EOQ
     select
       error_code as "Error Code",
-      count(*) as "Logs"
+      count(*) as "Request Count"
     from
       aws_s3_server_access_log
     where
@@ -236,7 +295,8 @@ query "activity_dashboard_logs_by_error" {
     group by
       error_code
     order by
-      count(*) desc
+      count(*) desc,
+      error_code
     limit 10;
   EOQ
 
@@ -245,44 +305,52 @@ query "activity_dashboard_logs_by_error" {
   }
 }
 
-query "activity_dashboard_logs_by_status" {
-  title       = "Top 10 HTTP Status Codes"
-  description = "List the 10 most frequent HTTP status codes returned."
+query "activity_dashboard_requests_by_status_category" {
+  title       = "Requests by Status Code Category"
+  description = "Count of requests grouped by HTTP status code category."
 
   sql = <<-EOQ
     select
-      http_status::VARCHAR as "Status Code",
-      count(*) as "Logs"
-    from
-      aws_s3_server_access_log
-    group by
-      http_status::VARCHAR
-    order by
-      count(*) desc
-    limit 10;
-  EOQ
-
-  tags = {
-    folder = "S3"
-  }
-}
-
-query "activity_dashboard_logs_by_user_agent" {
-  title       = "Top 10 User Agents"
-  description = "List the 10 most frequent user agents."
-
-  sql = <<-EOQ
-    select
-      user_agent as "User Agent",
-      count(*) as "Logs"
+      case
+        when http_status between 200 and 299 then '2xx Success'
+        when http_status between 300 and 399 then '3xx Redirect'
+        when http_status between 400 and 499 then '4xx Client Error'
+        when http_status between 500 and 599 then '5xx Server Error'
+        else 'Other'
+      end as "Status Category",
+      count(*) as "Request Count"
     from
       aws_s3_server_access_log
     where
-      user_agent != '-'
+      http_status is not null
     group by
-      user_agent
+      "Status Category"
     order by
-      count(*) desc
+      "Status Category";
+  EOQ
+
+  tags = {
+    folder = "S3"
+  }
+}
+
+query "activity_dashboard_top_10_urls" {
+  title       = "Top 10 URLs"
+  description = "List the top 10 requested URLs by request count."
+
+  sql = <<-EOQ
+    select
+      key as "URL",
+      count(*) as "Request Count"
+    from
+      aws_s3_server_access_log
+    where
+      key != '-'
+    group by
+      key
+    order by
+      count(*) desc,
+      key
     limit 10;
   EOQ
 
@@ -291,20 +359,75 @@ query "activity_dashboard_logs_by_user_agent" {
   }
 }
 
-query "activity_dashboard_logs_by_bucket" {
-  title       = "Logs by Bucket"
-  description = "Count log entries grouped by bucket name."
+query "activity_dashboard_top_10_successful_urls" {
+  title       = "Top 10 URLs (Successful Requests)"
+  description = "List the top 10 requested URLs by successful request count."
+
+  sql = <<-EOQ
+    select
+      key as "URL",
+      count(*) as "Request Count",
+      string_agg(distinct http_status::text, ', ' order by http_status::text) as "Status Codes"
+    from
+      aws_s3_server_access_log
+    where
+      http_status between 200 and 299
+      and key != '-'
+    group by
+      key
+    order by
+      count(*) desc,
+      key
+    limit 10;
+  EOQ
+
+  tags = {
+    folder = "S3"
+  }
+}
+
+query "activity_dashboard_top_10_error_urls" {
+  title       = "Top 10 URLs (Errors)"
+  description = "List the top 10 requested URLs by error count."
+
+  sql = <<-EOQ
+    select
+      key as "URL",
+      count(*) as "Error Count",
+      string_agg(distinct http_status::text, ', ' order by http_status::text) as "Status Codes"
+    from
+      aws_s3_server_access_log
+    where
+      http_status between 400 and 599
+      and key != '-'
+    group by
+      key
+    order by
+      count(*) desc,
+      key
+    limit 10;
+  EOQ
+
+  tags = {
+    folder = "S3"
+  }
+}
+
+query "activity_dashboard_requests_by_bucket" {
+  title       = "Requests by Bucket"
+  description = "Count requests grouped by bucket name."
 
   sql = <<-EOQ
     select
       bucket as "Bucket",
-      count(*) as "Logs"
+      count(*) as "Request Count"
     from
       aws_s3_server_access_log
     group by
       bucket
     order by
-      count(*) desc;
+      count(*) desc,
+      bucket;
   EOQ
 
   tags = {
@@ -312,18 +435,16 @@ query "activity_dashboard_logs_by_bucket" {
   }
 }
 
-query "activity_dashboard_logs_over_time" {
-  title       = "Activity Over Time (Last 30 Days)"
-  description = "Count log entries grouped by day for the last 30 days, with more robust date handling."
+query "activity_dashboard_requests_by_day" {
+  title       = "Requests by Day"
+  description = "Count requests grouped by day."
 
   sql = <<-EOQ
     select
       cast(tp_timestamp as date) as "Date",
-      count(*) as "Logs"
+      count(*) as "Request Count"
     from
       aws_s3_server_access_log
-    where
-      tp_timestamp >= current_date - interval '30 days'
     group by
       cast(tp_timestamp as date)
     order by

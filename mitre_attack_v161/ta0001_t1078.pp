@@ -21,7 +21,6 @@ benchmark "mitre_attack_v161_ta0001_t1078_004" {
   documentation = file("./mitre_attack_v161/docs/ta0001_t1078_004.md")
   children = [
     detection.s3_bucket_accessed_using_insecure_tls_version,
-    detection.s3_object_accessed_publicly,
     detection.s3_object_accessed_using_insecure_tls_version,
   ]
 
