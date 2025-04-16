@@ -1,6 +1,6 @@
 dashboard "activity_dashboard" {
 
-  title         = "S3 Server Access Logs Dashboard"
+  title         = "S3 Server Access Log Activity Dashboard"
   documentation = file("./dashboards/docs/activity_dashboard.md")
 
   tags = {
