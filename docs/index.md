@@ -30,6 +30,7 @@ sudo /bin/sh -c "$(curl -fsSL https://powerpipe.io/install/powerpipe.sh)"
 
 This mod also requires AWS S3 server access logs to be collected using [Tailpipe](https://tailpipe.io) with the [AWS plugin](https://hub.tailpipe.io/plugins/turbot/aws):
 - [Get started with the AWS plugin for Tailpipe →](https://hub.tailpipe.io/plugins/turbot/aws#getting-started)
+- [Collect AWS S3 server access logs →](https://hub.tailpipe.io/plugins/turbot/aws/tables/aws_s3_server_access_log#configure)
 
 Install the mod:
 
