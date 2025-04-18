@@ -121,7 +121,6 @@ query "s3_object_accessed_using_suspicious_user_agent" {
         user_agent ilike '%scanner%' or
         user_agent ilike '%exploit%' or
         user_agent ilike '%attack%' or
-        user_agent = '-' or
         user_agent is null
       )
     order by
