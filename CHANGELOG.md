@@ -11,4 +11,4 @@ _Enhancements_
 _Bug fixes_
 
 - Added missing bucket information to `Top 10 URIs` tables in Activity Dashboard.
-- Added `folder = "S3"` tag to Activity Dashboard queries.
+- Added `folder = "S3"` tag to detection queries.
