@@ -2,6 +2,7 @@
 locals {
   aws_s3_server_access_log_detections_common_tags = {
     category = "Detections"
+    folder   = "S3"
     plugin   = "aws"
     service  = "AWS/S3"
   }
