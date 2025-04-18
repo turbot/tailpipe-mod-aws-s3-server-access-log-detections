@@ -1,3 +1,18 @@
+## v0.2.0 [2025-04-18]
+
+_What's new?_
+
+- Added Top 10 Keys table to Activity Dashboard.
+
+_Enhancements_
+
+- Added missing bucket information to Top 10 URI tables in Activity Dashboard.
+- Added link for collecting logs in Getting Started section in README and index documentation.
+
+_Bug fixes_
+
+- Added `folder = "S3"` tag to Activity Dashboard queries.
+
 ## v0.1.0 [2025-04-16]
 
 _What's new?_
