@@ -3,10 +3,9 @@ dashboard "activity_dashboard" {
   title         = "S3 Server Access Log Activity Dashboard"
   documentation = file("./dashboards/docs/activity_dashboard.md")
 
-  tags = {
-    type    = "Dashboard"
-    service = "AWS/S3"
-  }
+  tags = merge(local.aws_s3_server_access_log_detections_common_tags, {
+    type = "Dashboard"
+  })
 
   container {
     # Analysis
@@ -64,8 +63,8 @@ dashboard "activity_dashboard" {
     }
 
     chart {
-      title = "Top 10 URLs"
-      query = query.activity_dashboard_top_10_urls
+      title = "Top 10 Keys"
+      query = query.activity_dashboard_top_10_keys
       type  = "table"
       width = 6
     }
@@ -99,15 +98,15 @@ dashboard "activity_dashboard" {
     }
 
     chart {
-      title = "Top 10 URLs (Successful Requests)"
-      query = query.activity_dashboard_top_10_successful_urls
+      title = "Top 10 URIs (Successful Requests)"
+      query = query.activity_dashboard_top_10_successful_uris
       type  = "table"
       width = 6
     }
 
     chart {
-      title = "Top 10 URLs (Errors)"
-      query = query.activity_dashboard_top_10_error_urls
+      title = "Top 10 URIs (Errors)"
+      query = query.activity_dashboard_top_10_error_uris
       type  = "table"
       width = 6
     }
@@ -128,9 +127,7 @@ query "activity_dashboard_total_requests" {
       aws_s3_server_access_log;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_success_count" {
@@ -146,9 +143,7 @@ query "activity_dashboard_success_count" {
       http_status between 200 and 299;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_redirect_count" {
@@ -164,9 +159,7 @@ query "activity_dashboard_redirect_count" {
       http_status between 300 and 399;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_client_error_count" {
@@ -182,9 +175,7 @@ query "activity_dashboard_client_error_count" {
       http_status between 400 and 499;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_server_error_count" {
@@ -200,9 +191,7 @@ query "activity_dashboard_server_error_count" {
       http_status between 500 and 599;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_requests_by_source_ip" {
@@ -225,9 +214,7 @@ query "activity_dashboard_requests_by_source_ip" {
     limit 10;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_requests_by_requester" {
@@ -241,7 +228,7 @@ query "activity_dashboard_requests_by_requester" {
     from
       aws_s3_server_access_log
     where
-      requester != '-'
+      requester is not null
     group by
       requester
     order by
@@ -250,9 +237,7 @@ query "activity_dashboard_requests_by_requester" {
     limit 10;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_requests_by_operation" {
@@ -273,9 +258,7 @@ query "activity_dashboard_requests_by_operation" {
     limit 10;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_requests_by_error" {
@@ -290,8 +273,6 @@ query "activity_dashboard_requests_by_error" {
       aws_s3_server_access_log
     where
       error_code is not null
-      and error_code != '-'
-      and error_code != ''
     group by
       error_code
     order by
@@ -300,9 +281,7 @@ query "activity_dashboard_requests_by_error" {
     limit 10;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_requests_by_status_category" {
@@ -329,88 +308,78 @@ query "activity_dashboard_requests_by_status_category" {
       "Status Category";
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
-query "activity_dashboard_top_10_urls" {
-  title       = "Top 10 URLs"
-  description = "List the top 10 requested URLs by request count."
+query "activity_dashboard_top_10_keys" {
+  title       = "Top 10 Keys"
+  description = "List the top 10 requested keys by request count."
 
   sql = <<-EOQ
     select
-      key as "URL",
+      bucket || '/' || key as "URI",
       count(*) as "Request Count"
     from
       aws_s3_server_access_log
     where
-      key != '-'
+      key is not null
     group by
-      key
+      "URI"
     order by
       count(*) desc,
-      key
+      "URI"
     limit 10;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
-query "activity_dashboard_top_10_successful_urls" {
-  title       = "Top 10 URLs (Successful Requests)"
-  description = "List the top 10 requested URLs by successful request count."
+query "activity_dashboard_top_10_successful_uris" {
+  title       = "Top 10 URIs (Successful Requests)"
+  description = "List the top 10 requested URIs by successful request count."
 
   sql = <<-EOQ
     select
-      key as "URL",
+      bucket || split_part(request_uri, ' ', 2) as "URI",
       count(*) as "Request Count",
       string_agg(distinct http_status::text, ', ' order by http_status::text) as "Status Codes"
     from
       aws_s3_server_access_log
     where
       http_status between 200 and 299
-      and key != '-'
     group by
-      key
+      "URI"
     order by
       count(*) desc,
-      key
+      "URI"
     limit 10;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
-query "activity_dashboard_top_10_error_urls" {
-  title       = "Top 10 URLs (Errors)"
-  description = "List the top 10 requested URLs by error count."
+query "activity_dashboard_top_10_error_uris" {
+  title       = "Top 10 URIs (Errors)"
+  description = "List the top 10 requested URIs by error count."
 
   sql = <<-EOQ
     select
-      key as "URL",
+      bucket || split_part(request_uri, ' ', 2) as "URI",
       count(*) as "Error Count",
       string_agg(distinct http_status::text, ', ' order by http_status::text) as "Status Codes"
     from
       aws_s3_server_access_log
     where
       http_status between 400 and 599
-      and key != '-'
     group by
-      key
+      "URI"
     order by
       count(*) desc,
-      key
+      "URI"
     limit 10;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_requests_by_bucket" {
@@ -430,9 +399,7 @@ query "activity_dashboard_requests_by_bucket" {
       bucket;
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
 
 query "activity_dashboard_requests_by_day" {
@@ -451,7 +418,5 @@ query "activity_dashboard_requests_by_day" {
       "Date";
   EOQ
 
-  tags = {
-    folder = "S3"
-  }
+  tags = local.aws_s3_server_access_log_detections_common_tags
 }
